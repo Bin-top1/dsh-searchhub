@@ -1,8 +1,11 @@
 # 发布指南（维护者）
 
-> 当前这台公司电脑有 Zscaler，CLI 连不上 GitHub / npm，只能浏览器传，
-> 且网页拖拽会漏传文件夹。请在**没有 Zscaler 的电脑**（如家里）用 git 完成。
-> 现在 npm registry 已证实「包名 `dsh-searchhub` 未被占用」（查询返回 404）。
+> **网络现状（本次会话实测，替换了旧的 Zscaler 假设）**
+> `git push` 到 GitHub 成功（Git Credential Manager 已存有凭据）；`npm` 也能访问
+> `registry.npmjs.org` 拉取元数据。所以推送可以在本机完成，**只有 `npm publish`
+> 还需要 `npm login`**（npm 的登录与 git 凭据是两套）。若某天 CLI 又不通，
+> 再换到没有 Zscaler 的电脑按同样的命令执行即可。
+> 包名 `dsh-searchhub` 已确认未被占用（查询返回 404）。
 
 ## 零、发布前本地校验（不需要网络，也不需要 pnpm）
 
@@ -38,24 +41,25 @@ lib/types/provider.d.ts
    `cordis.patch.yml`、`README.md`、`LICENSE`，且不能带 `tests/`、`src/`、
    `docs/`、`.github/`。
 
-## 一、把完整项目推到 GitHub
+## 一、提交并推送到 GitHub
 
-GitHub 仓库：https://github.com/Bin-top1/dsh-searchhub
-
-在无 Zscaler 的电脑上，进入项目文件夹后：
+GitHub 仓库：https://github.com/Bin-top1/dsh-searchhub（`origin`，分支 `main`）
 
 ```bash
-git init
 git add -A
 git commit -m "Add npm installer, optional peers, tests and CI"
-git branch -M main
-git remote add origin https://github.com/Bin-top1/dsh-searchhub.git
-git push -f origin main
+git push origin main        # 不要 -f：线上仓库已含完整项目，正常快进即可
 ```
 
-> `push -f` 会用完整项目覆盖现在残缺的仓库（线上只有 7 个根文件，缺
-> `lib/`、`src/`、`docs/`、`.github/`、`scripts/`、`tests/`）。推完刷新仓库
-> 首页，README 图片应正常显示。
+> 之前本文档写过「线上只有 7 个根文件、需要 `push -f` 覆盖」——**那是过期信息**。
+> 实测 `origin/main` 早已跟踪全部 15 个文件（含 `lib/`、`src/`、`docs/`、`.github/`），
+> 本次会话的 3 个提交也是**快进推送**成功的（`479977a..b647f96 main -> main`）。
+> 只有确实需要重写历史时才用 `-f`。
+
+> 关于 Zscaler：本文档原先假设本机 CLI 连不上 GitHub / npm。实测**都能连**：
+> `git push` 走 Git Credential Manager（`credential.helper=manager`）已成功；
+> `npm` 也能从 `registry.npmjs.org` 拉取元数据（沙箱外无需 `--cache` 变通）。
+> 只有 `npm publish` 还需要先 `npm login`（git 的凭据不用于 npm）。
 
 仓库应含 20 个文件（`node_modules/`、`lib/types/` 为生成物，已被忽略）：
 
