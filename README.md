@@ -50,7 +50,7 @@ dsh plugin --profile web add dsh-searchhub
 
 然后重启 web 配置，打开 **设置 → 插件**，在 **SearchHub** 卡片里设置 API 密钥（或导出 `TAVILY_API_KEY`）。需要 `pnpm` 在 `PATH` 上。
 
-> 也可以直接从 GitHub 安装：`dsh plugin --profile web add github:Bin/dsh-searchhub`
+> 也可以直接从 GitHub 安装：`dsh plugin --profile web add github:Bin-top1/dsh-searchhub`
 
 **方式 B —— 手动 npm 安装 + 一行 patch**
 
@@ -188,7 +188,7 @@ your `PATH`.
 > `allowBuilds` approval that pnpm will print):
 >
 > ```bash
-> dsh plugin --profile web add github:Bin/dsh-searchhub
+> dsh plugin --profile web add github:Bin-top1/dsh-searchhub
 > ```
 
 ### Option B — manual npm install + one patch line

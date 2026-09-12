@@ -22,12 +22,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Bin/dsh-searchhub.git"
+    "url": "git+https://github.com/Bin-top1/dsh-searchhub.git"
   },
   "bugs": {
-    "url": "https://github.com/Bin/dsh-searchhub/issues"
+    "url": "https://github.com/Bin-top1/dsh-searchhub/issues"
   },
-  "homepage": "https://github.com/Bin/dsh-searchhub#readme",
+  "homepage": "https://github.com/Bin-top1/dsh-searchhub#readme",
   "main": "lib/index.js",
   "dsh": {
     "bundle": {
