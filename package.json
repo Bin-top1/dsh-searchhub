@@ -1,0 +1,69 @@
+{
+  "name": "dsh-searchhub",
+  "description": "Stop paying for your agent's web search. dsh-searchhub is a pluggable search hub for the DeepSeek Harness — swap in mainstream search providers behind ctx.web, with a beautifully polished native Settings card. Ships with Tavily (1,000 free credits/month) out of the box.",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "author": "Bin <wenbin0809@gmail.com>",
+  "keywords": [
+    "deepseek",
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "cordis",
+    "web-search",
+    "search",
+    "searchhub",
+    "tavily",
+    "free-search",
+    "agent-tools",
+    "plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bin/dsh-searchhub.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Bin/dsh-searchhub/issues"
+  },
+  "homepage": "https://github.com/Bin/dsh-searchhub#readme",
+  "main": "lib/index.js",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prepublishOnly": "node -e \"['lib/index.js','lib/client.js','cordis.patch.yml'].forEach(function(f){if(!require('fs').existsSync(f))throw new Error('missing '+f)})\""
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.2"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-web": "^0.1.2-rc.1",
+    "@deepseek-ai/dsh-credentials": "^0.1.2-rc.1",
+    "@deepseek-ai/dsh-launch-environment": "^0.1.2-rc.1",
+    "@deepseek-ai/dsh-settings": "^0.1.2-rc.1"
+  }
+}

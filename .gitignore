@@ -1,0 +1,12 @@
+node_modules/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Build output is committed (lib/index.js) so the plugin loads without a build
+# step, but declaration output and source maps are regenerated:
+lib/**/*.d.ts
+lib/**/*.d.ts.map
+lib/**/*.js.map

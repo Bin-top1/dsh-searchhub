@@ -1,0 +1,46 @@
+# ---------------------------------------------------------------------------
+# Profile patch layer for dsh-searchhub (a dsh bundle).
+#
+# This file is declared by package.json:
+#
+#   "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+#
+# Because this package declares `dsh.bundle.patch`, running
+#
+#   dsh plugin --profile web add dsh-searchhub
+#
+# installs the package AND auto-appends it to the profile's
+# `dsh.profile.bundles` layer list, so this patch is applied automatically --
+# no hand-written `--patch` or manual edit of the profile's cordis.patch.yml.
+#
+# Patch semantics (last write per `id` wins across layers):
+#   - a row with `config:` REPLACES the targeted row's whole config
+#   - `disabled: true` turns a row off
+#   - `insert:` adds new rows (loader modules) referenced by package name
+#
+# IMPORTANT: the `name:` under `insert:` below MUST match this package's
+# `name` field in package.json. If you rename the package, rename it here too.
+# ---------------------------------------------------------------------------
+
+# Point the web capability seam at the Tavily search provider (and keep the
+# default HTTP fetch provider). A later profile/--patch layer can override this
+# again if the user wants a different provider.
+- id: web
+  config:
+    searchProvider: tavily
+    fetchProvider: http
+
+# Turn off the built-in DeepSeek search provider so it does not compete for the
+# `web` seam. Remove this row if you want to keep DeepSeek search installed and
+# only switch the active provider via the `web` row above.
+- id: web-search-deepseek
+  disabled: true
+
+# Register this plugin's host half (the Tavily provider + its Settings section).
+# `name` is resolved as a package specifier, so it loads this package's `main`
+# (lib/index.js) from the profile's node_modules. Its browser half (the native
+# Settings card) is discovered separately via package.json `dsh.client` +
+# `exports["./client"]`.
+- insert:
+    - id: searchhub
+      name: 'dsh-searchhub'
