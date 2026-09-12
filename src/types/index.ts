@@ -9,13 +9,18 @@ import type { Context } from '@deepseek-ai/cordis';
 import z from '@deepseek-ai/schemastery';
 import { credentialRef } from '@deepseek-ai/dsh-credentials';
 import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment';
+// Type-only imports that pull in the `Context` augmentations this plugin's
+// `apply` relies on (`ctx.settings`, `ctx.web`) — without them cordis's plain
+// `Context` has neither property.
+import type {} from '@deepseek-ai/dsh-settings';
+import type {} from '@deepseek-ai/dsh-web';
 import {
   TAVILY_DEFAULT_BASE_URL,
   TAVILY_DEFAULT_MAX_RESULTS,
   TAVILY_DEFAULT_SEARCH_DEPTH,
   TavilySearchProvider,
   type TavilySearchProviderOptions,
-} from './provider.ts';
+} from './provider.js';
 
 export {
   TavilySearchProvider,
@@ -23,13 +28,13 @@ export {
   TAVILY_DEFAULT_MAX_RESULTS,
   TAVILY_DEFAULT_SEARCH_DEPTH,
   TAVILY_PROVIDER_ID,
-} from './provider.ts';
+} from './provider.js';
 export type {
   TavilySearchProviderOptions,
   WebSearchRequest,
   WebSearchResult,
   WebSearchSource,
-} from './provider.ts';
+} from './provider.js';
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'searchhub';

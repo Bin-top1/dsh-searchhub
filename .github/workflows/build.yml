@@ -9,18 +9,34 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22 is the floor this package declares (and what DSH runs on); 24 is current.
+        node: ['22', '24']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      - name: Validate package.json
-        run: node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"
-      - name: Ensure runtime files exist
-        run: node -e "['lib/index.js','lib/client.js','cordis.patch.yml'].forEach(function(f){if(!require('fs').existsSync(f))throw new Error('missing '+f)})"
-      - name: Syntax-check runtime halves
+          node-version: ${{ matrix.node }}
+
+      - name: Install dev dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Syntax-check every runtime half
         run: |
           node --check lib/index.js
           node --check lib/client.js
-      - name: Confirm npm pack contents
+          node --check scripts/cli.mjs
+
+      - name: Build declaration files
+        run: npm run build
+
+      - name: Tests (installer behaviour + packaging invariants)
+        run: npm test
+
+      - name: Installer dry run against a throwaway Harness home
+        run: node scripts/cli.mjs install --home "${{ runner.temp }}/dsh-home" --dry-run --profile web
+
+      - name: Confirm the published surface
         run: npm pack --dry-run
