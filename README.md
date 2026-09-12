@@ -33,35 +33,72 @@
 - 💰 **零模型调用成本** —— 替换内置的 `web-search-deepseek` provider，让 `web_search` 打到真正的搜索 API，而不是一次付费模型调用。
 - 🎨 **自带精美原生卡片** —— 在 **设置 → 插件 → 插件配置** 里作为独立、可折叠的卡片出现（端点、搜索深度、结果数、答案开关、API 密钥），带实时状态圆点、眼睛按钮、行内密钥格式校验。
 - 🔐 **密钥处理得当** —— API 密钥作为**凭据引用**存储（默认 `TAVILY_API_KEY`），从界面或环境变量录入，永远不必写进配置文件。
-- ⚡ **一条命令安装** —— 以 **dsh bundle** 形式发布，`dsh plugin add` 会自动装包**并激活**，无需手改 profile 的 patch 文件。
+- ⚡ **一条命令安装** —— 以 **dsh bundle** 形式发布，`npx dsh-searchhub install` 会用 **npm**（不需要 pnpm）装包并把本包写进 `dsh.profile.bundles`，无需手改 profile 的 patch 文件。
 - 🧭 **结果归一化** —— 把 provider 结果映射成接缝已认识的 `{ sources, truncated }` 结构。
 
 #### 🚀 安装
 
-**方式 A —— 一条命令（推荐）**
+**方式 A —— npm 一条命令（推荐，不需要 pnpm）**
 
-因为本包在 `package.json` 里声明了 `dsh.bundle.patch`，DSH CLI 会自动安装并激活：
+```bash
+npx dsh-searchhub install --profile web
+```
+
+从本仓库 checkout 直接装（还没发布到 npm 也能用）：
+
+```bash
+node scripts/cli.mjs install
+```
+
+这一步会做三件事（就是 `dsh plugin` 的三步，但只用 npm）：
+
+1. `$DSH_HOME/profiles/web` 不存在时，按 DSH 自己的模板初始化（`package.json` + `cordis.patch.yml` + `pnpm-workspace.yaml`）；
+2. 在该目录里用 **npm** 安装本插件；
+3. 把本包追加进 profile 的 `dsh.profile.bundles` 层列表，于是它的 `cordis.patch.yml`（把 `ctx.web` 切到 Tavily、禁用 `web-search-deepseek`、注册本插件的宿主端 + 浏览器端）在下次启动时生效。
+
+常用子命令：
+
+```bash
+npx dsh-searchhub status               # 是否已安装 / 是否已激活 / 密钥是否配置
+npx dsh-searchhub install --dry-run    # 只打印计划，不做任何改动
+npx dsh-searchhub uninstall            # 卸载，并自动从 bundles 里摘掉
+npx dsh-searchhub install --spec github:Bin-top1/dsh-searchhub
+npx dsh-searchhub install --spec /path/to/dsh-searchhub   # 本地 checkout：自动打包成 tarball 再装
+```
+
+然后重启 web profile（`dsh web` 或 `dsh --profile web`），打开 **设置 → 插件**，在 **SearchHub** 卡片里填入密钥（或导出 `TAVILY_API_KEY`）。
+
+> **为什么不用 `dsh plugin add`？** `dsh plugin` 是 pnpm 的转发器（内部 `spawnSync("pnpm", …)`），机器上没有 pnpm 会直接失败。本安装器用你手上的 npm 完成同样的三步。
+>
+> **为什么 `--spec` 指向目录时先打包？** npm 对本地目录会建**软链接**，而软链接包的 `@deepseek-ai/*` 依赖会从仓库真实路径解析——那里没有宿主提供的这些包（或只有一份重复的），插件会加载失败。先打包成 tarball 再把副本装进 profile，依赖就会从 profile 向上走到 DSH 安装自己的依赖闭包，不会出现重复实例。
+
+**方式 B —— 手动 npm 安装 + 一行 bundles**
+
+```bash
+cd "$DSH_HOME/profiles/web"
+npm install dsh-searchhub
+```
+
+然后把包名加进该 profile 的 `dsh.profile.bundles`（DSH 就是靠这个列表装配插件层的）：
+
+```json
+"dsh": {
+  "profile": {
+    "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "dsh-searchhub"]
+  }
+}
+```
+
+**方式 C —— 直接用 `dsh plugin`（需要 `pnpm` 在 `PATH` 上）**
 
 ```bash
 dsh plugin --profile web add dsh-searchhub
 ```
 
-这一条命令会：1) 在 `$DSH_HOME/profiles/web` 里运行 `pnpm add dsh-searchhub`；2) 检测到本包的 `dsh.bundle` 声明，自动追加到 profile 的 `dsh.profile.bundles` 层列表，于是它的 `cordis.patch.yml`（把 `ctx.web` 切到 Tavily、禁用 `web-search-deepseek`、注册本插件的宿主端+浏览器端）在下次启动时生效。
-
-然后重启 web 配置，打开 **设置 → 插件**，在 **SearchHub** 卡片里设置 API 密钥（或导出 `TAVILY_API_KEY`）。需要 `pnpm` 在 `PATH` 上。
-
-> 也可以直接从 GitHub 安装：`dsh plugin --profile web add github:Bin-top1/dsh-searchhub`
-
-**方式 B —— 手动 npm 安装 + 一行 patch**
-
-```bash
-cd "$DSH_HOME/profiles/web"
-pnpm add dsh-searchhub
-```
-
-然后在 profile 自己的 `cordis.patch.yml` 里加：
+**方式 D —— 纯手工 patch（不写 bundles 列表也能生效）**
 
 ```yaml
+# $DSH_HOME/profiles/web/cordis.patch.yml
 - id: web
   config:
     searchProvider: tavily
@@ -73,9 +110,7 @@ pnpm add dsh-searchhub
       name: "dsh-searchhub"
 ```
 
-**方式 C —— 本地 checkout（完全不用 npm）**
-
-克隆本仓库到稳定位置，用 `file://` 引用它的入口（Windows 用正斜杠 `file:///C:/Users/.../lib/index.js`）。
+> ⚠️ 不要写 `name: "file:///…/dsh-searchhub/lib/index.js"` 去直接引用仓库里的文件：插件加载时会从仓库真实路径去找宿主提供的 `@deepseek-ai/*` 包，实测会 `ERR_MODULE_NOT_FOUND`。要用本地 checkout，请用方式 A 的 `--spec <checkout>`（先打包再安装）。
 
 #### ⚙️ 配置项
 
@@ -96,7 +131,17 @@ pnpm add dsh-searchhub
 
 #### 🛠️ 从源码构建
 
-仓库已附带预构建的 `lib/index.js`（宿主端）与 `lib/client.js`（浏览器端），无需构建即可加载。宿主端的类型源码在 `src/types/`，`npm run build` 产出 `.d.ts`；浏览器端 `lib/client.js` 是唯一权威手写源，按 DSH 客户端模块扫描器所需的注册形式编写（React 与 JSX runtime 由宿主种子经 `require` 提供），无需打包器。
+仓库已附带预构建的 `lib/index.js`（宿主端）与 `lib/client.js`（浏览器端），**安装和使用都不需要构建**：npm 只发布 `lib/*.js`、`scripts/cli.mjs`、`cordis.patch.yml` 与文档。
+
+只有维护者需要跑构建（生成类型声明）：
+
+```bash
+npm install     # 仅 typescript 与宿主类型包，都是 devDependencies
+npm run build   # tsc -p tsconfig.json → lib/types/*.d.ts
+npm test        # 安装器行为 + 打包不变量测试
+```
+
+宿主端类型源码在 `src/types/`，`npm run build` 产出 `.d.ts`（`npm publish` 前由 `prepublishOnly` 自动执行）；浏览器端 `lib/client.js` 是唯一权威手写源，按 DSH 客户端模块扫描器所需的注册形式编写（React 与 JSX runtime 由宿主种子经 `require` 提供），无需打包器，也没有一份会漂移的 `.ts` 副本。
 
 #### 🗺️ 路线图
 
@@ -156,50 +201,88 @@ Its **own** polished card under **Settings → Plugins**, with a live status dot
 - 🔐 **Secrets done right** — the API key lives as a **credential reference**
   (`TAVILY_API_KEY` by default), entered from the UI or the environment; it never
   has to sit in a config file.
-- ⚡ **One-command install** — ships as a **dsh bundle**, so `dsh plugin add`
-  installs *and* activates it. No hand-editing profile patch files.
+- ⚡ **One-command install** — ships as a **dsh bundle**, so
+  `npx dsh-searchhub install` installs it with **npm** (no pnpm required) and
+  appends it to `dsh.profile.bundles`. No hand-editing profile patch files.
 - 🧭 **Normalized results** — maps provider results into the seam's
   `{ sources, truncated }` shape the agent already understands.
 
 ## 🚀 Installation
 
-### Option A — one command (recommended)
+### Option A — one npm command (recommended, no pnpm needed)
 
-Because this package declares `dsh.bundle.patch` in its `package.json`, the DSH
-CLI installs it and activates it automatically:
+```bash
+npx dsh-searchhub install --profile web
+```
+
+Straight from a checkout (works before the package is on npm):
+
+```bash
+node scripts/cli.mjs install
+```
+
+It performs the same three steps `dsh plugin` performs, using the package
+manager you actually have:
+
+1. initializes `$DSH_HOME/profiles/web` when it does not exist yet, exactly like
+   DSH's own template (`package.json` + `cordis.patch.yml` + `pnpm-workspace.yaml`);
+2. installs this package into that directory with **npm**;
+3. appends the package to the profile's `dsh.profile.bundles` layer list, so its
+   `cordis.patch.yml` (switch `ctx.web` to Tavily, disable
+   `web-search-deepseek`, register this plugin's host + browser halves) applies
+   on the next boot.
+
+Other subcommands:
+
+```bash
+npx dsh-searchhub status               # installed? activated? key configured?
+npx dsh-searchhub install --dry-run    # print the plan, change nothing
+npx dsh-searchhub uninstall            # remove it and drop its layer again
+npx dsh-searchhub install --spec github:Bin-top1/dsh-searchhub
+npx dsh-searchhub install --spec /path/to/dsh-searchhub   # checkout → packed first
+```
+
+Then restart the web profile (`dsh web` or `dsh --profile web`) and open
+**Settings → Plugins**; set the API key in the *SearchHub* card (or export
+`TAVILY_API_KEY`).
+
+> **Why not `dsh plugin add`?** `dsh plugin` is a pnpm forwarder
+> (`spawnSync("pnpm", …)` internally) and fails outright on a machine without
+> pnpm. This installer performs the same three steps with npm.
+>
+> **Why does a directory `--spec` get packed first?** npm installs a local
+> **directory** as a symlink, and a symlinked package resolves its
+> `@deepseek-ai/*` imports from the checkout's real path — where the DSH peer
+> packages are absent (or a duplicate copy lives). Packing the checkout into a
+> tarball installs a real copy inside the profile, so those imports resolve
+> through the profile's own `node_modules` chain into the DSH installation
+> closure.
+
+### Option B — manual npm install + one manifest line
+
+```bash
+cd "$DSH_HOME/profiles/web"
+npm install dsh-searchhub
+```
+
+Then add the package name to that profile's `dsh.profile.bundles` (the layer
+list DSH composes plugins from):
+
+```json
+"dsh": {
+  "profile": {
+    "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "dsh-searchhub"]
+  }
+}
+```
+
+### Option C — the `dsh plugin` forwarder (needs `pnpm` on `PATH`)
 
 ```bash
 dsh plugin --profile web add dsh-searchhub
 ```
 
-That single command:
-
-1. runs `pnpm add dsh-searchhub` inside `$DSH_HOME/profiles/web`, then
-2. detects the package's `dsh.bundle` declaration and appends it to the
-   profile's `dsh.profile.bundles` layer list, so its `cordis.patch.yml`
-   (which switches `ctx.web` to Tavily, disables `web-search-deepseek`, and
-   registers this plugin's host + browser halves) is applied on next boot.
-
-Then restart the web profile and open **Settings → Plugins**; set the API key in
-the *SearchHub* card (or export `TAVILY_API_KEY`). Requires `pnpm` on
-your `PATH`.
-
-> Installing straight from GitHub also works (its build step may need pnpm's
-> `allowBuilds` approval that pnpm will print):
->
-> ```bash
-> dsh plugin --profile web add github:Bin-top1/dsh-searchhub
-> ```
-
-### Option B — manual npm install + one patch line
-
-If you prefer not to use the `dsh plugin` forwarder, install the package into the
-profile yourself and add one line to the profile's own patch layer:
-
-```bash
-cd "$DSH_HOME/profiles/web"
-pnpm add dsh-searchhub
-```
+### Option D — hand-written patch layer (works without the bundles list)
 
 ```yaml
 # $DSH_HOME/profiles/web/cordis.patch.yml
@@ -214,24 +297,11 @@ pnpm add dsh-searchhub
       name: "dsh-searchhub"
 ```
 
-### Option C — local checkout (no npm at all)
-
-Clone this repo somewhere stable and reference its built entry by `file://`:
-
-```yaml
-# $DSH_HOME/profiles/web/cordis.patch.yml
-- id: web
-  config:
-    searchProvider: tavily
-    fetchProvider: http
-- id: web-search-deepseek
-  disabled: true
-- insert:
-    - id: searchhub
-      name: "file:///ABSOLUTE/PATH/TO/dsh-searchhub/lib/index.js"
-```
-
-> On Windows use a forward-slash `file:///C:/Users/.../lib/index.js` URL.
+> ⚠️ Do **not** point `name:` at a file inside a checkout
+> (`file:///…/dsh-searchhub/lib/index.js`): the plugin then resolves its
+> host-provided `@deepseek-ai/*` imports from the checkout's real path and fails
+> with `ERR_MODULE_NOT_FOUND` (measured). For a local checkout use Option A's
+> `--spec <checkout>`, which packs it first.
 
 ## ⚙️ Configuration
 
@@ -314,19 +384,23 @@ allowlist, so consumers do not need a build step.
 
 ## 🛠️ Building from source
 
+Nothing needs to be built to install or use this plugin: the repository ships
+prebuilt `lib/index.js` (host half) and `lib/client.js` (browser half), and the
+npm package contains only those, `scripts/cli.mjs`, `cordis.patch.yml` and the
+docs.
+
+Maintainers run the build for the published type declarations:
+
 ```bash
-npm install
-npm run build      # emits lib/types/*.d.ts from src/ via tsc
+npm install     # devDependencies only: typescript + the host type packages
+npm run build   # tsc -p tsconfig.json → lib/types/*.d.ts
+npm test        # installer behaviour + packaging invariants
 ```
 
-The repository ships prebuilt `lib/index.js` (host half) and `lib/client.js`
-(browser half) so the plugin loads without a build step. Both are hand-authored
-in the exact form DSH loads (ESM module for the host; a
-`window.__ModuleLoader__.load` registration script for the browser).
-
 - **Host half:** typed sources live in `src/types/` (`index.ts`, `provider.ts`)
-  and compile to the `.d.ts` declarations via `npm run build`. `lib/index.js` is
-  the authoritative runtime.
+  and compile to `.d.ts` declarations via `npm run build`, which
+  `prepublishOnly` runs before the tarball is built. `lib/index.js` is the
+  authoritative runtime.
 - **Browser half:** `lib/client.js` is the single authoritative, hand-authored
   source — read it directly. It is intentionally written in the exact
   factory-registration form the DSH client-modules scanner serves (React and the
