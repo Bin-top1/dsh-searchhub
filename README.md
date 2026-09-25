@@ -38,13 +38,15 @@
 
 #### 🚀 安装
 
-**方式 A —— npm 一条命令（推荐，不需要 pnpm）**
+**方式 A —— 从 npm 安装（推荐，不需要 pnpm）**
 
 ```bash
 npx @wilson.liu.cn/dsh-searchhub install --profile web
 ```
 
-从本仓库 checkout 直接装（还没发布到 npm 也能用）：
+这条命令从 **npm registry** 下载本包（[`@wilson.liu.cn/dsh-searchhub`](https://www.npmjs.com/package/@wilson.liu.cn/dsh-searchhub)）并自动完成「安装 + 激活」。想只用 npm 手动装，见下方**方式 B**。
+
+从本仓库 checkout 直接装（开发本插件时用，不经过 npm）：
 
 ```bash
 node scripts/cli.mjs install
@@ -209,13 +211,17 @@ Its **own** polished card under **Settings → Plugins**, with a live status dot
 
 ## 🚀 Installation
 
-### Option A — one npm command (recommended, no pnpm needed)
+### Option A — install from npm (recommended, no pnpm needed)
 
 ```bash
 npx @wilson.liu.cn/dsh-searchhub install --profile web
 ```
 
-Straight from a checkout (works before the package is on npm):
+This downloads the package from the **npm registry**
+([`@wilson.liu.cn/dsh-searchhub`](https://www.npmjs.com/package/@wilson.liu.cn/dsh-searchhub))
+and installs + activates it. To install with plain npm instead, see **Option B**.
+
+From a checkout (when developing this plugin itself):
 
 ```bash
 node scripts/cli.mjs install
