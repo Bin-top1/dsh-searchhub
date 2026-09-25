@@ -103,6 +103,31 @@ test('both halves agree on the settings namespace and the credential reference',
   assert.match(host, /registerSearchProvider\(/u, 'the host half must register the search provider');
 });
 
+test('the browser half self-registers under the exact package name', () => {
+  // The client-modules registry keys every bundle by its package specifier and
+  // throws `bundle <url> loaded without registering "<id>"` when the self-
+  // registration id does not match. Renaming the package without renaming these
+  // strings breaks the Settings card at boot (the client bundle is served but
+  // never registers), so the bundle id and the style-ownership tag are asserted
+  // against package.json name together.
+  const client = read('lib/client.js');
+  const registered = /window\.__ModuleLoader__\.load\(\{\s*id:\s*"([^"]+)"/u.exec(client)?.[1];
+  assert.equal(
+    registered,
+    manifest.name,
+    'the id in lib/client.js __ModuleLoader__.load must equal package.json name',
+  );
+  // `client-modules` inventories a plugin's <style> tags by `data-plugin ===
+  // <module id>`, so a stale value silently drops the card's CSS from HMR
+  // bookkeeping.
+  const tagged = /tag\.dataset\.plugin = "([^"]+)"/u.exec(client)?.[1];
+  assert.equal(
+    tagged,
+    manifest.name,
+    'the data-plugin style tag in lib/client.js must equal package.json name',
+  );
+});
+
 test('the browser half never bundles its own React', () => {
   const client = read('lib/client.js');
   assert.match(client, /require\("react"\)/u);

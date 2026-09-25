@@ -19,7 +19,7 @@ export const TAVILY_DEFAULT_SEARCH_DEPTH = 'basic';
 export const TAVILY_DEFAULT_MAX_RESULTS = 5;
 
 /** Attribution header sent on every request. Bump with the package version. */
-const USER_AGENT = 'dsh-searchhub/1.0.0';
+const USER_AGENT = 'dsh-searchhub/1.0.1';
 
 /**
  * One normalized source returned to the web seam. The seam owns the final

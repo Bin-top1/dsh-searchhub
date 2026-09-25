@@ -229,7 +229,14 @@ test('parseArgs handles commands, flags, positional specs and failures', () => {
 });
 
 test('defaultSpec picks the registry for an installed copy and a checkout otherwise', () => {
-  assert.deepEqual(defaultSpec(repoDir), { kind: 'checkout', name: '@wilson.liu.cn/dsh-searchhub', version: '1.0.0' });
+  // Read the real manifest instead of hard-coding name/version, so renaming the
+  // package or bumping the version does not fail this test.
+  const manifest = JSON.parse(readFileSync(join(repoDir, 'package.json'), 'utf8'));
+  assert.deepEqual(defaultSpec(repoDir), {
+    kind: 'checkout',
+    name: manifest.name,
+    version: manifest.version,
+  });
 
   const installed = join(scratch('installed'), 'node_modules', 'dsh-searchhub');
   writeManifest(installed, { name: 'dsh-searchhub', version: '1.0.0' });
