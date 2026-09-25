@@ -137,20 +137,26 @@ jobs:
         run: |
           package="$(node -p 'require("./package.json").name')"
           version="$(node -p 'require("./package.json").version')"
-          for attempt in 1 2 3 4 5; do
-            published="$(npm view "${package}@${version}" version 2>/dev/null || true)"
+          # A freshly published version is NOT instantly readable: the publish
+          # flow probes for the package first, and that 404 lands in the registry
+          # CDN cache — `npm view` then keeps reporting "not found" for minutes
+          # (measured ~2.5 min on 1.0.1 and 1.0.2). Poll generously rather than
+          # failing a publish that actually landed; --prefer-online skips npm's
+          # own cached copy on top of that.
+          for attempt in $(seq 1 20); do
+            published="$(npm view "${package}@${version}" version --prefer-online 2>/dev/null || true)"
             if [ "$published" = "$version" ]; then
-              echo "✓ ${package}@${version} is live"
+              echo "✓ ${package}@${version} is live (visible after ${attempt} attempt(s))"
               break
             fi
-            echo "attempt ${attempt}: not visible yet, retrying in 10s"
-            sleep 10
-            if [ "$attempt" = 5 ]; then
-              echo "::error::${package}@${version} did not appear on the registry"
+            echo "attempt ${attempt}: not visible yet, retrying in 30s"
+            sleep 30
+            if [ "$attempt" = 20 ]; then
+              echo "::error::${package}@${version} did not appear on the registry within 10 minutes"
               exit 1
             fi
           done
-          attestations="$(npm view "${package}@${version}" --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(j.dist&&j.dist.attestations?"yes":"")}catch{}})')"
+          attestations="$(npm view "${package}@${version}" --json --prefer-online 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(j.dist&&j.dist.attestations?"yes":"")}catch{}})')"
           if [ "$attestations" = "yes" ]; then
             echo "✓ provenance attestation present"
           else
