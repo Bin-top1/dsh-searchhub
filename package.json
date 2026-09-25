@@ -50,7 +50,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "dsh-searchhub": "./scripts/cli.mjs"
+    "dsh-searchhub": "scripts/cli.mjs"
   },
   "files": [
     "lib/index.js",

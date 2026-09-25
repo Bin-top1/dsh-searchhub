@@ -131,7 +131,7 @@ test('the npm files allowlist covers every runtime file', () => {
 
 test('the installer CLI is published as a binary with a shebang', () => {
   const bin = manifest.bin?.['dsh-searchhub'];
-  assert.equal(bin, './scripts/cli.mjs');
+  assert.equal(bin, 'scripts/cli.mjs');
   const cliPath = join(repoDir, bin);
   assert.equal(existsSync(cliPath), true);
   assert.match(readFileSync(cliPath, 'utf8'), /^#!\/usr\/bin\/env node\n/u);
