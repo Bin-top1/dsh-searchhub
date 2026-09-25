@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# Profile patch layer for dsh-searchhub (a dsh bundle).
+# Profile patch layer for @wilson.liu.cn/dsh-searchhub (a dsh bundle).
 #
 # This file is declared by package.json:
 #
@@ -7,7 +7,7 @@
 #
 # Because this package declares `dsh.bundle.patch`, running
 #
-#   dsh plugin --profile web add dsh-searchhub
+#   dsh plugin --profile web add @wilson.liu.cn/dsh-searchhub
 #
 # installs the package AND auto-appends it to the profile's
 # `dsh.profile.bundles` layer list, so this patch is applied automatically --
@@ -43,4 +43,4 @@
 # `exports["./client"]`.
 - insert:
     - id: searchhub
-      name: 'dsh-searchhub'
+      name: '@wilson.liu.cn/dsh-searchhub'

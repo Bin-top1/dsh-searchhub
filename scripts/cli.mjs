@@ -374,7 +374,7 @@ Options
   -h, --help             this text
 
 Examples
-  npx dsh-searchhub install --profile web
+  npx @wilson.liu.cn/dsh-searchhub install --profile web
   node scripts/cli.mjs install --spec github:Bin-top1/dsh-searchhub
   dsh-searchhub install --dry-run --profile web
 

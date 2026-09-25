@@ -229,7 +229,7 @@ test('parseArgs handles commands, flags, positional specs and failures', () => {
 });
 
 test('defaultSpec picks the registry for an installed copy and a checkout otherwise', () => {
-  assert.deepEqual(defaultSpec(repoDir), { kind: 'checkout', name: 'dsh-searchhub', version: '1.0.0' });
+  assert.deepEqual(defaultSpec(repoDir), { kind: 'checkout', name: '@wilson.liu.cn/dsh-searchhub', version: '1.0.0' });
 
   const installed = join(scratch('installed'), 'node_modules', 'dsh-searchhub');
   writeManifest(installed, { name: 'dsh-searchhub', version: '1.0.0' });

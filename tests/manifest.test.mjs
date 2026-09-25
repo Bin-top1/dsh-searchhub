@@ -149,7 +149,7 @@ test('the attribution user-agent tracks the package version', () => {
 
 test('the docs name the same install entry points as the manifest', () => {
   const readme = read('README.md');
-  assert.match(readme, /npx dsh-searchhub install/u, 'the README must document the npm installer');
+  assert.match(readme, /npx @wilson\.liu\.cn\/dsh-searchhub install/u, 'the README must document the npm installer');
   assert.match(readme, /dsh-searchhub install/u);
   assert.match(readme, /dsh\.profile\.bundles/u, 'the README must explain how the layer is activated');
   assert.match(readme, /uninstall/u);

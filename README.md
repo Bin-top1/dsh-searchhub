@@ -33,7 +33,7 @@
 - 💰 **零模型调用成本** —— 替换内置的 `web-search-deepseek` provider，让 `web_search` 打到真正的搜索 API，而不是一次付费模型调用。
 - 🎨 **自带精美原生卡片** —— 在 **设置 → 插件 → 插件配置** 里作为独立、可折叠的卡片出现（端点、搜索深度、结果数、答案开关、API 密钥），带实时状态圆点、眼睛按钮、行内密钥格式校验。
 - 🔐 **密钥处理得当** —— API 密钥作为**凭据引用**存储（默认 `TAVILY_API_KEY`），从界面或环境变量录入，永远不必写进配置文件。
-- ⚡ **一条命令安装** —— 以 **dsh bundle** 形式发布，`npx dsh-searchhub install` 会用 **npm**（不需要 pnpm）装包并把本包写进 `dsh.profile.bundles`，无需手改 profile 的 patch 文件。
+- ⚡ **一条命令安装** —— 以 **dsh bundle** 形式发布，`npx @wilson.liu.cn/dsh-searchhub install` 会用 **npm**（不需要 pnpm）装包并把本包写进 `dsh.profile.bundles`，无需手改 profile 的 patch 文件。
 - 🧭 **结果归一化** —— 把 provider 结果映射成接缝已认识的 `{ sources, truncated }` 结构。
 
 #### 🚀 安装
@@ -41,7 +41,7 @@
 **方式 A —— npm 一条命令（推荐，不需要 pnpm）**
 
 ```bash
-npx dsh-searchhub install --profile web
+npx @wilson.liu.cn/dsh-searchhub install --profile web
 ```
 
 从本仓库 checkout 直接装（还没发布到 npm 也能用）：
@@ -59,11 +59,11 @@ node scripts/cli.mjs install
 常用子命令：
 
 ```bash
-npx dsh-searchhub status               # 是否已安装 / 是否已激活 / 密钥是否配置
-npx dsh-searchhub install --dry-run    # 只打印计划，不做任何改动
-npx dsh-searchhub uninstall            # 卸载，并自动从 bundles 里摘掉
-npx dsh-searchhub install --spec github:Bin-top1/dsh-searchhub
-npx dsh-searchhub install --spec /path/to/dsh-searchhub   # 本地 checkout：自动打包成 tarball 再装
+npx @wilson.liu.cn/dsh-searchhub status               # 是否已安装 / 是否已激活 / 密钥是否配置
+npx @wilson.liu.cn/dsh-searchhub install --dry-run    # 只打印计划，不做任何改动
+npx @wilson.liu.cn/dsh-searchhub uninstall            # 卸载，并自动从 bundles 里摘掉
+npx @wilson.liu.cn/dsh-searchhub install --spec github:Bin-top1/dsh-searchhub
+npx @wilson.liu.cn/dsh-searchhub install --spec /path/to/dsh-searchhub   # 本地 checkout：自动打包成 tarball 再装
 ```
 
 然后重启 web profile（`dsh web` 或 `dsh --profile web`），打开 **设置 → 插件**，在 **SearchHub** 卡片里填入密钥（或导出 `TAVILY_API_KEY`）。
@@ -76,7 +76,7 @@ npx dsh-searchhub install --spec /path/to/dsh-searchhub   # 本地 checkout：�
 
 ```bash
 cd "$DSH_HOME/profiles/web"
-npm install dsh-searchhub
+npm install @wilson.liu.cn/dsh-searchhub
 ```
 
 然后把包名加进该 profile 的 `dsh.profile.bundles`（DSH 就是靠这个列表装配插件层的）：
@@ -84,7 +84,7 @@ npm install dsh-searchhub
 ```json
 "dsh": {
   "profile": {
-    "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "dsh-searchhub"]
+    "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@wilson.liu.cn/dsh-searchhub"]
   }
 }
 ```
@@ -92,7 +92,7 @@ npm install dsh-searchhub
 **方式 C —— 直接用 `dsh plugin`（需要 `pnpm` 在 `PATH` 上）**
 
 ```bash
-dsh plugin --profile web add dsh-searchhub
+dsh plugin --profile web add @wilson.liu.cn/dsh-searchhub
 ```
 
 **方式 D —— 纯手工 patch（不写 bundles 列表也能生效）**
@@ -107,7 +107,7 @@ dsh plugin --profile web add dsh-searchhub
   disabled: true
 - insert:
     - id: searchhub
-      name: "dsh-searchhub"
+      name: "@wilson.liu.cn/dsh-searchhub"
 ```
 
 > ⚠️ 不要写 `name: "file:///…/dsh-searchhub/lib/index.js"` 去直接引用仓库里的文件：插件加载时会从仓库真实路径去找宿主提供的 `@deepseek-ai/*` 包，实测会 `ERR_MODULE_NOT_FOUND`。要用本地 checkout，请用方式 A 的 `--spec <checkout>`（先打包再安装）。
@@ -202,7 +202,7 @@ Its **own** polished card under **Settings → Plugins**, with a live status dot
   (`TAVILY_API_KEY` by default), entered from the UI or the environment; it never
   has to sit in a config file.
 - ⚡ **One-command install** — ships as a **dsh bundle**, so
-  `npx dsh-searchhub install` installs it with **npm** (no pnpm required) and
+  `npx @wilson.liu.cn/dsh-searchhub install` installs it with **npm** (no pnpm required) and
   appends it to `dsh.profile.bundles`. No hand-editing profile patch files.
 - 🧭 **Normalized results** — maps provider results into the seam's
   `{ sources, truncated }` shape the agent already understands.
@@ -212,7 +212,7 @@ Its **own** polished card under **Settings → Plugins**, with a live status dot
 ### Option A — one npm command (recommended, no pnpm needed)
 
 ```bash
-npx dsh-searchhub install --profile web
+npx @wilson.liu.cn/dsh-searchhub install --profile web
 ```
 
 Straight from a checkout (works before the package is on npm):
@@ -235,11 +235,11 @@ manager you actually have:
 Other subcommands:
 
 ```bash
-npx dsh-searchhub status               # installed? activated? key configured?
-npx dsh-searchhub install --dry-run    # print the plan, change nothing
-npx dsh-searchhub uninstall            # remove it and drop its layer again
-npx dsh-searchhub install --spec github:Bin-top1/dsh-searchhub
-npx dsh-searchhub install --spec /path/to/dsh-searchhub   # checkout → packed first
+npx @wilson.liu.cn/dsh-searchhub status               # installed? activated? key configured?
+npx @wilson.liu.cn/dsh-searchhub install --dry-run    # print the plan, change nothing
+npx @wilson.liu.cn/dsh-searchhub uninstall            # remove it and drop its layer again
+npx @wilson.liu.cn/dsh-searchhub install --spec github:Bin-top1/dsh-searchhub
+npx @wilson.liu.cn/dsh-searchhub install --spec /path/to/dsh-searchhub   # checkout → packed first
 ```
 
 Then restart the web profile (`dsh web` or `dsh --profile web`) and open
@@ -262,7 +262,7 @@ Then restart the web profile (`dsh web` or `dsh --profile web`) and open
 
 ```bash
 cd "$DSH_HOME/profiles/web"
-npm install dsh-searchhub
+npm install @wilson.liu.cn/dsh-searchhub
 ```
 
 Then add the package name to that profile's `dsh.profile.bundles` (the layer
@@ -271,7 +271,7 @@ list DSH composes plugins from):
 ```json
 "dsh": {
   "profile": {
-    "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "dsh-searchhub"]
+    "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@wilson.liu.cn/dsh-searchhub"]
   }
 }
 ```
@@ -279,7 +279,7 @@ list DSH composes plugins from):
 ### Option C — the `dsh plugin` forwarder (needs `pnpm` on `PATH`)
 
 ```bash
-dsh plugin --profile web add dsh-searchhub
+dsh plugin --profile web add @wilson.liu.cn/dsh-searchhub
 ```
 
 ### Option D — hand-written patch layer (works without the bundles list)
@@ -294,7 +294,7 @@ dsh plugin --profile web add dsh-searchhub
   disabled: true
 - insert:
     - id: searchhub
-      name: "dsh-searchhub"
+      name: "@wilson.liu.cn/dsh-searchhub"
 ```
 
 > ⚠️ Do **not** point `name:` at a file inside a checkout
