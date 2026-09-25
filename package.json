@@ -1,7 +1,7 @@
 {
   "name": "@wilson.liu.cn/dsh-searchhub",
   "description": "Stop paying for your agent's web search. dsh-searchhub is a pluggable search hub for the DeepSeek Harness — swap in mainstream search providers behind ctx.web, with a beautifully polished native Settings card. Ships with Tavily (1,000 free credits/month) out of the box.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "license": "MIT",
   "author": "Bin <wenbin0809@gmail.com>",
