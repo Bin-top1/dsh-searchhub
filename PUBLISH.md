@@ -137,10 +137,40 @@ DSH_HOME=/tmp/dsh-home dsh --profile web --dump-config | grep -E "searchhub|sear
 真机安装后重启 profile（`dsh web`），打开 **设置 → 插件 → SearchHub** 粘贴
 Tavily 密钥，或在启动前导出 `TAVILY_API_KEY`。
 
-## 四、版本升级流程
+## 四、版本升级流程（一条命令）
 
-1. 改 `package.json` 的 `version`（可同时更新 `lib/index.js` 与
-   `src/types/provider.ts` 里手写的 `USER_AGENT` 版本号，
-   `tests/manifest.test.mjs` 会校验两者与 `version` 一致）；
-2. 本地跑 `npm run check`；
-3. 提交推送，然后 `git tag vX.Y.Z && git push origin vX.Y.Z` 触发 CI 发布。
+```bash
+npm version patch                     # 或 minor / major
+git push origin main --follow-tags    # 推 main + tag → CI 自动发布
+```
+
+`npm version` 会自动完成四件事：bump 版本号、同步两处 `USER_AGENT`、
+创建发布提交、打 tag。`--follow-tags` 把 main 和 tag 一起推上去，tag 触发
+`.github/workflows/build.yml` 的 `publish` job（OIDC，无需 token）。
+
+版本号只在这三处出现，全部由 `scripts/sync-user-agent.mjs`
+（挂在 `package.json` 的 `scripts.version` 钩子上）维护：
+
+| 位置 | 内容 |
+| --- | --- |
+| `package.json` | `version` |
+| `lib/index.js` | `const USER_AGENT = "dsh-searchhub/<version>"` |
+| `src/types/provider.ts` | `const USER_AGENT = 'dsh-searchhub/<version>'` |
+
+> ⚠️ **为什么钩子必须自己 `git add`？** npm 只暂存 manifest 和 lockfile，
+> 钩子自己改的文件会被留在工作区脏状态。那样 tag 指向的提交里 `USER_AGENT`
+> 会落后一个版本，而 CI 恰恰会在**那个 tag** 上跑 `check` 并变红，导致发布被拦。
+> `tests/version.test.mjs` 覆盖了这一点（重写、幂等、缺行报错、以及暂存行为）。
+
+发布后确认：
+
+```bash
+npm view @wilson.liu.cn/dsh-searchhub version bin
+# 期望 bin = { 'dsh-searchhub': 'scripts/cli.mjs' } —— 见下方「已知坑」
+```
+
+### 已知坑：bin 字段的 `./` 前缀
+
+`"bin": { "dsh-searchhub": "scripts/cli.mjs" }` —— **不要**写成
+`"./scripts/cli.mjs"`：npm 11.19 会把带 `./` 的值判为无效并**静默删除**，
+发布出去的包就没有 `dsh-searchhub` 命令了。
