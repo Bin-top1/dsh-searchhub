@@ -3,6 +3,7 @@ name: check
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
 
@@ -40,3 +41,118 @@ jobs:
 
       - name: Confirm the published surface
         run: npm pack --dry-run
+
+  # ---------------------------------------------------------------------------
+  # Publish to npm via OIDC trusted publishing.
+  #
+  # No NPM_TOKEN secret, no 2FA prompt, no long-lived credential to leak or
+  # rotate. GitHub mints a short-lived OIDC token for this run and npmjs.org
+  # verifies its claims against the trusted publisher configured on the package.
+  #
+  # ONE-TIME SETUP (npmjs.com, do this before the first tag push):
+  #   https://www.npmjs.com/package/@wilson.liu.cn/dsh-searchhub/access
+  #   → Publishing access → Trusted publishers → Add:
+  #       Provider:          GitHub Actions
+  #       Organization:      Bin-top1
+  #       Repository:        dsh-searchhub
+  #       Workflow filename: build.yml   <- BASENAME ONLY, never a path
+  #       Environment:       (leave blank)
+  #
+  # TO RELEASE: bump `version` in package.json, commit + push, then
+  #   git tag v1.0.1 && git push origin v1.0.1
+  # The tag must match package.json exactly (checked below).
+  #
+  # The check matrix above also runs for the tag, and `needs: check` keeps a
+  # red build from ever reaching the registry.
+  # ---------------------------------------------------------------------------
+  publish:
+    needs: check
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # the OIDC claim npm verifies against the trusted publisher
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # node 24 ships npm 11.12.x. Trusted publishing needs npm >= 11.5.1:
+          # older npm never emits the OIDC auth header, so the publish PUT comes
+          # back 403/404 even though the provenance statement was generated.
+          node-version: '24'
+          # Enables the OIDC exchange. Deliberately NOT coupled to any
+          # NODE_AUTH_TOKEN secret — there is no token.
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Print the OIDC context a publish failure is diagnosed against
+        run: |
+          echo "repository:       ${GITHUB_REPOSITORY}"
+          echo "repository_owner: ${GITHUB_REPOSITORY_OWNER}"
+          echo "workflow file:    $(basename "${GITHUB_WORKFLOW_REF%%@*}")"
+          echo "ref:              ${GITHUB_REF}"
+          echo "node:             $(node --version)"
+          echo "npm:              $(npm --version)"
+
+      - name: Require npm 11.5.1 or newer
+        run: |
+          node -e 'const v = require("child_process").execSync("npm --version").toString().trim().split(".").map(Number); if (v[0] < 11 || (v[0] === 11 && v[1] < 5)) { console.error(`npm ${v.join(".")} is older than 11.5.1 — it would publish without OIDC auth and the registry would reject the PUT`); process.exit(1); }'
+
+      - name: Require the tag to match package.json
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(node -p 'require("./package.json").version')"
+          echo "tag=${GITHUB_REF_NAME}  package.json=${version}"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match package.json version ${version}"
+            exit 1
+          fi
+
+      - name: Install dev dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Publish
+        # `prepublishOnly` re-runs the syntax checks, tests and tsc build, so the
+        # tarball is validated at the moment it is packed.
+        run: |
+          set -o pipefail
+          package="$(node -p 'require("./package.json").name')"
+          npm publish --access public 2>&1 | tee publish.log || {
+            if grep -qE 'cannot publish over|EPUBLISHCONFLICT' publish.log; then
+              echo "::notice::${package}@${GITHUB_REF_NAME#v} is already on the registry — nothing to publish"
+              exit 0
+            fi
+            if grep -qE '404.*PUT|403|ENEEDAUTH' publish.log; then
+              echo "::error::the registry rejected the publish — the trusted publisher does not match this run."
+              echo "::error::expected config at https://www.npmjs.com/package/${package}/access"
+              echo "::error::  Provider: GitHub Actions"
+              echo "::error::  Organization: ${GITHUB_REPOSITORY_OWNER}"
+              echo "::error::  Repository: ${GITHUB_REPOSITORY#*/}"
+              echo "::error::  Workflow filename: $(basename "${GITHUB_WORKFLOW_REF%%@*}")"
+            fi
+            exit 1
+          }
+
+      - name: Confirm the published version and its provenance
+        run: |
+          package="$(node -p 'require("./package.json").name')"
+          version="$(node -p 'require("./package.json").version')"
+          for attempt in 1 2 3 4 5; do
+            published="$(npm view "${package}@${version}" version 2>/dev/null || true)"
+            if [ "$published" = "$version" ]; then
+              echo "✓ ${package}@${version} is live"
+              break
+            fi
+            echo "attempt ${attempt}: not visible yet, retrying in 10s"
+            sleep 10
+            if [ "$attempt" = 5 ]; then
+              echo "::error::${package}@${version} did not appear on the registry"
+              exit 1
+            fi
+          done
+          attestations="$(npm view "${package}@${version}" --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(j.dist&&j.dist.attestations?"yes":"")}catch{}})')"
+          if [ "$attestations" = "yes" ]; then
+            echo "✓ provenance attestation present"
+          else
+            echo "::warning::no provenance attestation found — the version published, but trusted publishing may not be fully configured"
+          fi
